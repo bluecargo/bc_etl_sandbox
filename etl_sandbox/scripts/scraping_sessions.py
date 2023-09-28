@@ -51,7 +51,7 @@ spark.sql(
         , s.status
         , s.target_id
         , st.containertransaction_id AS transaction_id
-        , st.shipment_id AS derived_from_shipment
+        , s.entity_id AS derived_from_shipment
     FROM sessions s
     LEFT JOIN shipment_transactions st 
         ON st.shipment_id = s.entity_id
@@ -67,4 +67,4 @@ spark.sql(
     """
 ).createOrReplaceTempView("sessions")
 
-spark.sql("SELECT * FROM sessions").write.mode("overwrite").parquet("data/target-tables/sessions")
+spark.sql("SELECT * FROM sessions").write.mode("overwrite").parquet("data/sessions")
