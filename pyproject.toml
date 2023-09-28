@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "etl-sandbox"
+version = "0.1.0"
+description = ""
+authors = ["Pierre Pasquet <80340281+ppasquet@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "etl_sandbox"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pyspark = "^3.4.1"
+duckdb = "^0.9.0"
+harlequin = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
