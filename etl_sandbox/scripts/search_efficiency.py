@@ -49,12 +49,32 @@ spark.sql(
         , CASE 
             WHEN s.created_at < sche.created_at THEN 'early'
             WHEN s.created_at > COALESCE(sche.terminated_at, sche._export_timestamp) THEN 'late'
-            ELSE 'in_scope'
+            WHEN s.created_at BETWEEN sche.created_at AND COALESCE(sche.terminated_at, sche._export_timestamp) THEN 'in_scope'
+            ELSE 'no_session'
         END AS punctuality
     FROM schedules sche
     LEFT JOIN sessions s
         ON (s.transaction_id = sche.transaction_id AND UPPER(s.context) = UPPER(sche.target_type) AND s.target_id = sche.target_id)
     """
-).createOrReplaceTempView("tmp")
+).createOrReplaceTempView("search_efficiency")
 
-spark.sql("SELECT * FROM tmp").write.mode("overwrite").parquet("data/search_efficiency")
+spark.sql("SELECT * FROM search_efficiency").write.mode("overwrite").parquet("data/search_efficiency")
+
+spark.sql(
+    """
+    SELECT
+        transaction_id
+        , target_type
+        , target_id
+        , context
+        , punctuality
+        , session_status
+        , COUNT(DISTINCT session_id) AS session_count
+        , MIN(session_created_at) AS first_session_created_at
+        , MAX(session_created_at) AS last_session_created_at
+    FROM search_efficiency
+    GROUP BY transaction_id, target_type, target_id, context, punctuality, session_status
+    """
+).createOrReplaceTempView("search_efficiency_facts")
+
+spark.sql("SELECT * FROM search_efficiency_facts").write.mode("overwrite").parquet("data/search_efficiency_facts")
