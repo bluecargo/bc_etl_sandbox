@@ -114,4 +114,4 @@ spark.sql(
 ).createOrReplaceTempView("search_engine_facts")
 
 spark.sql("SELECT * FROM search_engine").write.mode("overwrite").parquet("data/search_engine")
-spark.sql("SELECT * FROM search_engine_facts").write.mode("overwrite").parquet("data/search_efficiency_facts")
+spark.sql("SELECT * FROM search_engine_facts").write.mode("overwrite").parquet("data/search_engine_facts")

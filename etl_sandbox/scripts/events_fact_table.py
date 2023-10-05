@@ -119,10 +119,10 @@ spark.sql(
 facts = spark.sql(
     """
     SELECT 
-        e.*, 
-        ei.origin_session_id, 
-        ei.origin_session_created_at, 
-        ei.previous_session_id, 
+        e.*,
+        ei.origin_session_id,
+        ei.origin_session_created_at,
+        ei.previous_session_id,
         ei.previous_session_created_at
     FROM events e
     LEFT JOIN event_info ei
