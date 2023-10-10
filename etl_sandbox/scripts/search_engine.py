@@ -4,8 +4,57 @@ from pyspark.sql import functions as F
 spark = SparkSession.builder.config("spark.driver.memory", "8g").appName('SparkByExamples.com').getOrCreate()
 
 spark.read.parquet("data/source-tables/scraping_scrapingsession/*.parquet").createOrReplaceTempView("sessions")
-spark.read.parquet("data/source-tables/search_transactionrefreshschedule/*.parquet").createOrReplaceTempView("schedules")
+spark.read.parquet("data/source-tables/search_transactionrefreshschedule/*.parquet").createOrReplaceTempView("transaction_schedules")
+spark.read.parquet("data/source-tables/search_shipmentrefreshschedule/*.parquet").createOrReplaceTempView("shipment_schedules")
 spark.read.parquet("data/source-tables/containers_shipment_transactions/*.parquet").createOrReplaceTempView("shipment_transactions")
+
+spark.sql(
+    """
+    SELECT
+        id
+        , created_at
+        , target_id
+        , target_type
+        , search_type
+        , status
+        , transaction_id
+        , terminated_at
+        , termination_code
+        , context
+        , NULL AS derived_from_shipment
+        , _export_timestamp
+    FROM transaction_schedules
+    """
+).createOrReplaceTempView("transaction_schedules")
+
+spark.sql(
+    """
+    SELECT
+        s.id
+        , s.created_at
+        , s.target_id
+        , s.target_type
+        , s.search_type
+        , s.status
+        , st.containertransaction_id AS transaction_id
+        , s.terminated_at
+        , s.termination_code
+        , NULL AS context
+        , s.shipment_id AS derived_from_shipment
+        , s._export_timestamp
+    FROM shipment_schedules s
+    LEFT JOIN shipment_transactions st
+        ON st.shipment_id = s.shipment_id
+    """
+).createOrReplaceTempView("shipment_schedules")
+
+spark.sql(
+    """
+    SELECT * FROM transaction_schedules t
+    UNION ALL
+    SELECT * FROM shipment_schedules s
+    """
+).createOrReplaceTempView("schedules")
 
 spark.sql(
     """
@@ -54,7 +103,7 @@ spark.sql(
         , st.containertransaction_id AS transaction_id
         , s.entity_id AS derived_from_shipment
     FROM sessions s
-    LEFT JOIN shipment_transactions st 
+    LEFT JOIN shipment_transactions st
         ON st.shipment_id = s.entity_id
     WHERE s.entity_type = 'shipment'
     """
